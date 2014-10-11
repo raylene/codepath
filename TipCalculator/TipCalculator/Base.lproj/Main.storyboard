@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="6245" systemVersion="13F34" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" initialViewController="Clu-hg-M3t">
     <dependencies>
+        <deployment defaultVersion="1536" identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="6238"/>
     </dependencies>
     <scenes>
@@ -57,7 +58,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" id="9Vo-LQ-XH6">
-                                <rect key="frame" x="16" y="265" width="288" height="11"/>
+                                <rect key="frame" x="16" y="265" width="288" height="18"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="calibratedWhite"/>
                             </view>
@@ -108,6 +109,7 @@
                     </navigationItem>
                     <connections>
                         <outlet property="billTextField" destination="DNR-Ks-IKp" id="wk6-MW-foT"/>
+                        <outlet property="dividerBarView" destination="9Vo-LQ-XH6" id="4IN-bE-Urs"/>
                         <outlet property="tipControl" destination="5Hm-XV-WpW" id="BBR-Pl-wnC"/>
                         <outlet property="tipLabel" destination="vZX-DG-dmZ" id="maa-KM-dgx"/>
                         <outlet property="totalLabel" destination="HfR-Nl-QKQ" id="WtD-UM-a94"/>

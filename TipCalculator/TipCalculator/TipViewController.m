@@ -15,10 +15,10 @@
 @property (weak, nonatomic) IBOutlet UILabel *tipLabel;
 @property (weak, nonatomic) IBOutlet UILabel *totalLabel;
 @property (weak, nonatomic) IBOutlet UISegmentedControl *tipControl;
+@property (weak, nonatomic) IBOutlet UIView *dividerBarView;
 
 - (IBAction)onTap:(id)sender;
 - (void)updateValues;
-//- (void)onSettingsButton;
 - (void)loadSettings;
 
 @end
@@ -57,24 +57,12 @@
     self.tipLabel.text = [NSString stringWithFormat:@"$%0.2f",tipAmount];
     self.totalLabel.text = [NSString stringWithFormat:@"$%0.2f", totalAmount];
     
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    NSLog(@"view will appear");
-    [self loadSettings];
-    [self updateValues];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    NSLog(@"view did appear");
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-    NSLog(@"view will disappear");
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-    NSLog(@"view did disappear");
+    // Animate the bar to display / hide when values are updated
+    self.dividerBarView.alpha = 0;
+    [UIView animateWithDuration:0.8 animations:^{
+        self.dividerBarView.alpha = 1;
+    } completion:^(BOOL finished) {
+    }];
 }
 
 @end
