@@ -17,6 +17,11 @@
 @property (weak, nonatomic) IBOutlet UITableView *moviesTableView;
 @property (nonatomic, strong) NSArray *movies;
 @property (nonatomic, strong) UIRefreshControl *refreshControl;
+@property (weak, nonatomic) IBOutlet UIView *networkErrorView;
+
+- (void)setupNetworkErrorView;
+- (void)setupMovieTableView;
+- (void)loadMovieData;
 
 @end
 
@@ -27,59 +32,74 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    self.title = @"Movies";
     [SVProgressHUD showWithStatus:@"Loading..." maskType:SVProgressHUDMaskTypeGradient];
     
-    self.moviesTableView.delegate = self;
-    self.moviesTableView.dataSource = self;
-    self.moviesTableView.rowHeight = 100;
-    
-    self.title = @"Movies";
-    
-    NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=gd6zknyveccx6wbrxx6pkxe6&limit=20&country=us"];
-    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-        NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        
-        self.movies = responseDictionary[@"movies"];
-        NSLog(@"movies response: %@", self.movies);
-        
-        // Triggers refresh of table info
-        [self.moviesTableView reloadData];
-        
-        [SVProgressHUD dismiss];
-    }];
-    
-    // Create reusable cell -- nib name must match .xib filename
-    [self.moviesTableView registerNib:[UINib nibWithNibName:@"MovieCell" bundle:nil] forCellReuseIdentifier:@"MovieCell"];
+    [self setupNetworkErrorView];
+    [self setupMovieTableView];
+    [self loadMovieData];
     
     // Setup refresh control
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(onRefresh) forControlEvents:UIControlEventValueChanged];
     [self.moviesTableView insertSubview:self.refreshControl atIndex:0];
     
+    
     // Table footer animation
     /*
-    UIView *tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 50)];
-    UIActivityIndicatorView *loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-    [loadingView startAnimating];
-    loadingView.center = tableFooterView.center;
-    [tableFooterView addSubview:loadingView];
-    self.moviesTableView.tableFooterView = tableFooterView;
+     UIView *tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 50)];
+     UIActivityIndicatorView *loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+     [loadingView startAnimating];
+     loadingView.center = tableFooterView.center;
+     [tableFooterView addSubview:loadingView];
+     self.moviesTableView.tableFooterView = tableFooterView;
      */
+}
+
+- (void)setupNetworkErrorView {
+    NSLog(@"setupNetworkErrorView");
+    [self.networkErrorView setHidden:YES];
+}
+
+- (void)setupMovieTableView {
+    self.moviesTableView.delegate = self;
+    self.moviesTableView.dataSource = self;
+    self.moviesTableView.rowHeight = 100;
+    
+    // Create reusable cell -- nib name must match .xib filename
+    [self.moviesTableView registerNib:[UINib nibWithNibName:@"MovieCell" bundle:nil] forCellReuseIdentifier:@"MovieCell"];
+}
+
+- (void)loadMovieData {
+    NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=gd6zknyveccx6wbrxx6pkxe6&limit=20&country=us"];
+    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
+    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+        
+        // Show error if request fails
+        NSLog(@"connection error:%@", connectionError);
+        if (connectionError) {
+            [self.networkErrorView setHidden:FALSE];
+            
+        } else if (data) {
+            NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        
+            self.movies = responseDictionary[@"movies"];
+            //NSLog(@"movies response: %@", self.movies);
+        
+            // Triggers refresh of table info
+            [self.moviesTableView reloadData];
+        }
+
+        // Clear/stop any active loading indicators
+        [SVProgressHUD dismiss];
+        [self.refreshControl endRefreshing];
+    }];
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
-
-/*
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    // Returns nil if empty
-    NSLog(@"num movies: %ld", self.movies.count);
-    return self.movies.count;
-}
-*/
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     NSLog(@"num movies: %ld", self.movies.count);
@@ -96,7 +116,6 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
     // Needs UIImageView+AFNetworking
     NSString *posterUrl = [movie valueForKeyPath:@"posters.thumbnail"];
     [cell.posterView setImageWithURL:[NSURL URLWithString:posterUrl]];
-    
     return cell;
 }
 
@@ -109,21 +128,11 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
     [self.navigationController pushViewController:vc animated:YES];
 }
 
-/*
-// Table section header customization
-- (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-    UIView *tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 50)];
-    return tableFooterView;
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-    return 20;
-}
-*/
-
 // For UIRefreshControl
 - (void)onRefresh {
     NSLog(@"onRefresh!");
+    [self.networkErrorView setHidden:TRUE];
+    [self loadMovieData];
     /*
     NSURL *url = [NSURL URLWithString:@"..."];
     NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];

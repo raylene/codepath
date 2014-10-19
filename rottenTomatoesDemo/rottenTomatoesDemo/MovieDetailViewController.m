@@ -24,9 +24,17 @@
     self.titleLabel.text = self.movieData[@"title"];
     self.synopsisLabel.text = self.movieData[@"synopsis"];
     
+    // Low-res url
+    NSString *thumbnailPosterUrl = [self.movieData valueForKeyPath:@"posters.thumbnail"];
+    // Get high-res image url hack
+    NSString *highResPosterUrl = [thumbnailPosterUrl stringByReplacingOccurrencesOfString:@"tmb"
+                                         withString:@"ori"];
     
-    NSString *posterUrl = [self.movieData valueForKeyPath:@"posters.thumbnail"];
-    [self.posterImageView setImageWithURL:[NSURL URLWithString:posterUrl]];
+    // Question -- is it better to only kick off loading the high-res image after the thumbnail req
+    // finishes? How are these requests related, given docs say: "Any previous image request for the
+    // receiver will be cancelled."
+    [self.posterImageView setImageWithURL:[NSURL URLWithString:thumbnailPosterUrl]];
+    [self.posterImageView setImageWithURL:[NSURL URLWithString:highResPosterUrl]];
     
     self.scrollView.contentSize = CGSizeMake(320, 1000);
 }
