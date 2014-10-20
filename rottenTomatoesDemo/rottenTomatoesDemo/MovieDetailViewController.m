@@ -11,32 +11,47 @@
 
 @interface MovieDetailViewController ()
 @property (weak, nonatomic) IBOutlet UILabel *titleLabel;
-@property (weak, nonatomic) IBOutlet UILabel *synopsisLabel;
+@property (weak, nonatomic) IBOutlet UITextView *synopsisText;
 @property (weak, nonatomic) IBOutlet UIImageView *posterImageView;
 @property (weak, nonatomic) IBOutlet UIScrollView *scrollView;
+
 @end
 
 @implementation MovieDetailViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view from its nib.
+    
+    self.title = self.movieData[@"title"];
     self.titleLabel.text = self.movieData[@"title"];
-    self.synopsisLabel.text = self.movieData[@"synopsis"];
+    self.synopsisText.text = self.movieData[@"synopsis"];
     
     // Low-res url
-    NSString *thumbnailPosterUrl = [self.movieData valueForKeyPath:@"posters.thumbnail"];
+    NSString *thumbnailPosterString = [self.movieData valueForKeyPath:@"posters.thumbnail"];
+    NSURL *thumbnailPosterURL = [NSURL URLWithString:thumbnailPosterString];
     // Get high-res image url hack
-    NSString *highResPosterUrl = [thumbnailPosterUrl stringByReplacingOccurrencesOfString:@"tmb"
-                                         withString:@"ori"];
+    NSURL *highResPosterURL = [NSURL URLWithString:[thumbnailPosterString stringByReplacingOccurrencesOfString:@"tmb"
+                                         withString:@"ori"]];
     
-    // Question -- is it better to only kick off loading the high-res image after the thumbnail req
-    // finishes? How are these requests related, given docs say: "Any previous image request for the
-    // receiver will be cancelled."
-    [self.posterImageView setImageWithURL:[NSURL URLWithString:thumbnailPosterUrl]];
-    [self.posterImageView setImageWithURL:[NSURL URLWithString:highResPosterUrl]];
+    // Load high-res after loading the thumbnail
+    // Hm, the second request doesn't seem to complete until I navigate away/back...
+    /*
+    [self.posterImageView setImageWithURLRequest:[NSURLRequest requestWithURL:thumbnailPosterURL] placeholderImage:nil success:^(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *image) {
+        NSLog(@"Success -- loaded thumbnail");
+        [self.posterImageView setImage:image];
+        
+        [self.posterImageView setImageWithURLRequest:[NSURLRequest requestWithURL:highResPosterURL] placeholderImage:nil success:^(NSURLRequest *request, NSHTTPURLResponse *response, UIImage *highResImage) {
+            NSLog(@"Success -- loaded high-res");
+            [self.posterImageView setImage:highResImage];
+        } failure:nil];
+    } failure:nil];
+    */
+
+    // ^Is this better than just sending 2 requests to setImageWith URL?
+    [self.posterImageView setImageWithURL:thumbnailPosterURL];
+    [self.posterImageView setImageWithURL:highResPosterURL];
     
-    self.scrollView.contentSize = CGSizeMake(320, 1000);
+    self.scrollView.contentSize = CGSizeMake(320, 500);
 }
 
 - (void)didReceiveMemoryWarning {

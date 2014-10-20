@@ -18,10 +18,18 @@
 @property (nonatomic, strong) NSArray *movies;
 @property (nonatomic, strong) UIRefreshControl *refreshControl;
 @property (weak, nonatomic) IBOutlet UIView *networkErrorView;
+@property (weak, nonatomic) IBOutlet UITabBar *movieTypeTabBar;
 
+@property (weak, nonatomic) IBOutlet UITabBarItem *movieTabBarItem;
+@property (weak, nonatomic) IBOutlet UITabBarItem *dvdTabBarItem;
+@property (weak, nonatomic) UITabBarItem *selectedTabBarItem;
+
+
+- (void)setupTabBar;
 - (void)setupNetworkErrorView;
 - (void)setupMovieTableView;
 - (void)loadMovieData;
+- (void)loadDVDData;
 
 @end
 
@@ -31,10 +39,9 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    self.title = @"Movies";
     [SVProgressHUD showWithStatus:@"Loading..." maskType:SVProgressHUDMaskTypeGradient];
     
+    [self setupTabBar];
     [self setupNetworkErrorView];
     [self setupMovieTableView];
     [self loadMovieData];
@@ -43,17 +50,30 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
     self.refreshControl = [[UIRefreshControl alloc] init];
     [self.refreshControl addTarget:self action:@selector(onRefresh) forControlEvents:UIControlEventValueChanged];
     [self.moviesTableView insertSubview:self.refreshControl atIndex:0];
-    
-    
-    // Table footer animation
-    /*
-     UIView *tableFooterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 50)];
-     UIActivityIndicatorView *loadingView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
-     [loadingView startAnimating];
-     loadingView.center = tableFooterView.center;
-     [tableFooterView addSubview:loadingView];
-     self.moviesTableView.tableFooterView = tableFooterView;
-     */
+}
+
+- (void)setupTabBar {
+    NSLog(@"setupTabBar");
+    self.movieTypeTabBar.delegate = self;
+    [self.movieTypeTabBar setTintColor:[UIColor yellowColor]];
+    [self.movieTypeTabBar setSelectedItem:self.movieTabBarItem];
+    self.selectedTabBarItem = self.movieTabBarItem;
+}
+
+- (void)tabBar:(UITabBar *)tabBar didSelectItem:(UITabBarItem *)item{
+    if (self.selectedTabBarItem == item) {
+        // Do nothing!
+        return;
+    }
+    self.selectedTabBarItem = item;
+    [SVProgressHUD showWithStatus:@"Loading..." maskType:SVProgressHUDMaskTypeGradient];
+    if (item == self.movieTabBarItem) {
+        NSLog(@"MOVIES");
+        [self loadMovieData];
+    } else if (item == self.dvdTabBarItem) {
+        NSLog(@"DVDS");
+        [self loadDVDData];
+    }
 }
 
 - (void)setupNetworkErrorView {
@@ -64,14 +84,15 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
 - (void)setupMovieTableView {
     self.moviesTableView.delegate = self;
     self.moviesTableView.dataSource = self;
-    self.moviesTableView.rowHeight = 100;
+    self.moviesTableView.rowHeight = 118;
     
     // Create reusable cell -- nib name must match .xib filename
     [self.moviesTableView registerNib:[UINib nibWithNibName:@"MovieCell" bundle:nil] forCellReuseIdentifier:@"MovieCell"];
 }
 
 - (void)loadMovieData {
-    NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=gd6zknyveccx6wbrxx6pkxe6&limit=20&country=us"];
+    self.title = @"Movies";
+    NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/movies/box_office.json?apikey=gd6zknyveccx6wbrxx6pkxe6&limit=30&country=us"];
     NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
         
@@ -90,6 +111,30 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
             [self.moviesTableView reloadData];
         }
 
+        // Clear/stop any active loading indicators
+        [SVProgressHUD dismiss];
+        [self.refreshControl endRefreshing];
+    }];
+}
+
+- (void)loadDVDData {
+    self.title = @"DVDs";
+    NSURL *url = [NSURL URLWithString:@"http://api.rottentomatoes.com/api/public/v1.0/lists/dvds/current_releases.json?apikey=gd6zknyveccx6wbrxx6pkxe6&limit=30&country=us"];
+    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
+    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+        
+        // Show error if request fails
+        NSLog(@"connection error:%@", connectionError);
+        if (connectionError) {
+            [self.networkErrorView setHidden:FALSE];
+        } else if (data) {
+            NSDictionary *responseDictionary = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+            
+            self.movies = responseDictionary[@"movies"];
+            // Triggers refresh of table info
+            [self.moviesTableView reloadData];
+        }
+        
         // Clear/stop any active loading indicators
         [SVProgressHUD dismiss];
         [self.refreshControl endRefreshing];
@@ -132,15 +177,11 @@ NSString *const RottenTomatoesAPIKey = @"gd6zknyveccx6wbrxx6pkxe6";
 - (void)onRefresh {
     NSLog(@"onRefresh!");
     [self.networkErrorView setHidden:TRUE];
-    [self loadMovieData];
-    /*
-    NSURL *url = [NSURL URLWithString:@"..."];
-    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
-    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
-        
-        [self.refreshControl endRefreshing];
-    }];
-     */
+    if (self.selectedTabBarItem == self.movieTabBarItem) {
+        [self loadMovieData];
+    } else if (self.selectedTabBarItem == self.dvdTabBarItem) {
+        [self loadDVDData];
+    }
 }
 
 /*

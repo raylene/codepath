@@ -25,6 +25,19 @@
     UINavigationController *nvc = [[UINavigationController alloc] initWithRootViewController:vc];
     self.window.rootViewController = nvc;
     
+    // Customize navigation bar
+    [[UINavigationBar appearance] setBarTintColor:[UIColor blackColor]];
+    [[UINavigationBar appearance] setTintColor:[UIColor yellowColor]];
+    NSDictionary *navTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                       [UIColor yellowColor], NSForegroundColorAttributeName, nil];
+    /*
+    NSDictionary *navTextAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                       [UIColor yellowColor], NSForegroundColorAttributeName,
+                                       shadow, NSShadowAttributeName,
+                                       [UIFont fontWithName:@"HelveticaNeue-CondensedBlack" size:21.0], NSFontAttributeName, nil];
+     */
+     [[UINavigationBar appearance] setTitleTextAttributes: navTextAttributes];
+    
     [self.window makeKeyAndVisible];
     return YES;
 }
